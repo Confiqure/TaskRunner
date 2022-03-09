@@ -1,0 +1,1 @@
+[{"name":"Nouns NFT Auction Closing","schedule":{"hour":23,"minute":15},"type":"selenium","data":{"url":"https://etherscan.io/address/0x830bd73e4184cef73443c15111a1df14e495c706","xpath":"//div[@class='card-body']/div/div[2]","return":"Current Bid: $bid. Check it out: https://nouns.wtf/"}}]
