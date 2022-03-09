@@ -9,6 +9,8 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 from time import sleep
 
+DEBUG = True
+
 driver = webdriver.Chrome()
 with open("jobs.json", "r") as data:
     jobs = json.load(data)
@@ -18,11 +20,19 @@ with open("jobs.json", "r") as data:
 
 
 def selenium(data):
+    if not DEBUG:
+        random_sleep(20, 0.5)  # Avoid hitting the exact second
     driver.get(data["url"])
     search = driver.find_elements_by_xpath(data["xpath"])
-    if search:
-        return re.sub(r"(\$\w+)", search[0].text, data["return"])
-    return False
+    if not search:
+        return False
+    mode = data.get("mode", "always")
+    last_value = data.get("last_value", None)
+    value = search[0].text
+    if mode == "different" and value == last_value:
+        return False
+    data["last_value"] = value
+    return re.sub(r"(\$\w+)", value, data["return"])
 
 
 def wait_for_element(xpath, timeout=10):
@@ -44,7 +54,7 @@ def next_timestamp(job):
     if "timestamp" in sch:
         return float(sch["timestamp"])
 
-    target = datetime.now() + timedelta(seconds=1)
+    target = datetime.now()
     year = target.year
     month = sch.get("month", target.month)
     day = sch.get("day", target.day)
@@ -83,6 +93,8 @@ def wait_for_timestamp(goal):
     while True:
         delta = goal - datetime.now().timestamp()
         half = int(delta / 2)
+        if DEBUG:
+            print(f"Seconds left: {round(delta, 1)}")
         if half > 1:
             sleep(half)
         elif delta > 0:
@@ -100,13 +112,15 @@ if __name__ == "__main__":
         next = min(runtime.keys())
         job = runtime[next]
         remainder = round(next - datetime.now().timestamp(), 1)
+        if DEBUG:
+            print(
+                f"Next in the queue: {job['name']} at {datetime.fromtimestamp(next)} ({remainder} seconds)"
+            )
 
-        print(
-            f"Next in the queue: {job['name']} at {datetime.fromtimestamp(next)} ({remainder} seconds)"
-        )
         wait_for_timestamp(next)
-        print(f"Triggered job: {job['name']}")
 
+        if DEBUG:
+            print(f"Triggered job: {job['name']} at {datetime.now()}")
         if job["type"] == "selenium":
             result = selenium(job["data"])
             if result:
