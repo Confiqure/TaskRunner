@@ -26,10 +26,10 @@ def selenium(data):
     search = driver.find_elements(by=By.XPATH, value=data["xpath"])
     if not search:
         return False
-    mode = data.get("mode", "always")
+    alert_mode = data.get("alert_mode", "always")
     last_value = data.get("last_value", None)
     value = search[0].text
-    if mode == "different" and value == last_value:
+    if alert_mode == "different" and value == last_value:
         return False
     data["last_value"] = value
     return re.sub(r"(\$\w+)", value, data["return"])
@@ -48,40 +48,66 @@ def wait_for_element(xpath, timeout=10):
 
 # SCHEDULER
 
-
-def next_timestamp(job):
-    sch = job["schedule"]
-    if "timestamp" in sch:
-        return float(sch["timestamp"])
-
+def _next_time(data):
     target = datetime.now()
     year = target.year
-    month = sch.get("month", target.month)
-    day = sch.get("day", target.day)
-    hour = sch.get("hour", target.hour)
-    minute = sch.get("minute", target.minute)
-    second = sch.get("second", int(random() * 60))
+    month = data.get("month", target.month)
+    day = data.get("day", target.day)
+    hour = data.get("hour", target.hour)
+    minute = data.get("minute", target.minute)
+    second = data.get("second", int(random() * 60))
 
     target = datetime(year, month, day, hour, minute, second)
     if target > datetime.now():
         return target.timestamp()
-    if "month" in sch:
+    if "month" in data:
         return datetime(year + 1, month, day, hour, minute, second).timestamp()
-    elif "day" in sch:
+    elif "day" in data:
         if month == 12:
             return datetime(year + 1, 1, day, hour, minute, second).timestamp()
         else:
             return datetime(year, month + 1, day, hour, minute, second).timestamp()
-    elif "hour" in sch:
+    elif "hour" in data:
         return (target + timedelta(days=1)).timestamp()
-    elif "minute" in sch:
+    elif "minute" in data:
         return (target + timedelta(hours=1)).timestamp()
-    elif "second" in sch:
+    elif "second" in data:
         return (target + timedelta(minutes=1)).timestamp()
     else:
         print("Error: no valid schedule set. Defaulting to tomorrow.")
         return (target + timedelta(days=1)).timestamp()
 
+def _next_loop(data):
+    offset = 0
+    if "seconds" in data:
+        offset += data["seconds"]
+    if "minutes" in data:
+        offset += 60 * data["minutes"]
+    if "hours" in data:
+        offset += 60 * 60 * data["hours"]
+    if "days" in data:
+        offset += 60 * 60 * 24 * data["days"]
+    if "weeks" in data:
+        offset += 60 * 60 * 24 * 7 * data["weeks"]
+    if "months" in data:
+        offset += 60 * 60 * 24 * (365.25 / 12) * data["months"]
+    if "years" in data:
+        offset += 60 * 60 * 24 * 365.25 * data["years"]
+    return datetime.now().timestamp() + offset
+
+def next_timestamp(job, first=False):
+    def by_time():
+        data = job["time"]
+        if "timestamp" in data:
+            return float(data["timestamp"])
+        return _next_time(data)
+    if first and "time" in job:
+        return by_time()
+    elif "loop" in job:
+        data = job["loop"]
+        return _next_loop(data)
+    elif "time" in job:
+        return by_time()
 
 def random_sleep(seconds, noise=0.1):
     sleep((random() * 2 * noise * seconds) + (seconds * (1 - noise)))
@@ -107,7 +133,7 @@ def wait_for_timestamp(goal):
 if __name__ == "__main__":
     runtime = {}
     for job in jobs:
-        runtime[next_timestamp(job)] = job
+        runtime[next_timestamp(job, first=True)] = job
     while True:
         next = min(runtime.keys())
         job = runtime[next]
