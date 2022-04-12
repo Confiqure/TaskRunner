@@ -19,7 +19,9 @@ Next, install required dependencies.
 pip install -r requirements.txt
 ```
 
-Finally, save a chromedriver executable to your PATH. You may download the latest version here: <https://chromedriver.chromium.org/downloads>
+Next, save a chromedriver executable to your PATH. You may download the latest version here: <https://chromedriver.chromium.org/downloads>
+
+Finally, build a proper `jobs.json` database for the runner using `jobs-example.json` as an example.
 
 ## 🐦 Usage
 

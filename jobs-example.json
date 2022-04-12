@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Event Title",
+    "start_time": {
+      "hour": 5,
+      "minute": 15
+    },
+    "interval": {
+      "days": 1,
+      "hours": 1
+    },
+    "type": "selenium",
+    "data": {
+      "url": "https://github.com/Confiqure/TaskRunner",
+      "vars": [
+        {
+          "xpath": "//xpath",
+          "alert": {
+            "type": "different",
+            "value": "previous value"
+          }
+        },
+        {
+          "xpath": "//xpath",
+          "alert": {
+            "type": "equal",
+            "value": "condition to return true"
+          }
+        }
+      ],
+      "return": "Message to return if alerted, use variables like: $hash"
+    }
+  }
+]

@@ -29,7 +29,7 @@ def selenium(data):
     wait_for_element(data["vars"][0]["xpath"])
     random_sleep(1)
 
-    alert = True
+    alert = False
     for var in data["vars"]:
         search = driver.find_elements(by=By.XPATH, value=var["xpath"])
         if not search:
@@ -40,11 +40,11 @@ def selenium(data):
         result = re.sub(r"(\$\w+)", value, result, 1)
         test = var.get("alert")
         if test is None:
-            continue
-        elif test['type'] == "equal" and test['value'] != value:
-            alert = False
-        elif test['type'] == "different":
-            alert = test['value'] != value
+            alert = True
+        elif test['type'] == "equal" and test['value'] == value:
+            alert = True
+        elif test['type'] == "different" and test['value'] != value:
+            alert = True
             test['value'] = value
 
     if DEBUG:
@@ -95,7 +95,7 @@ def _next_time(data):
         print("Error: no valid schedule set. Defaulting to tomorrow.")
         return (target + timedelta(days=1)).timestamp()
 
-def _next_loop(data):
+def _add_interval(data):
     offset = 0
     if "seconds" in data:
         offset += data["seconds"]
@@ -115,16 +115,16 @@ def _next_loop(data):
 
 def next_timestamp(job, first=False):
     def by_time():
-        data = job["time"]
+        data = job["start_time"]
         if "timestamp" in data:
             return float(data["timestamp"])
         return _next_time(data)
-    if not DEBUG and first and "time" in job:
+    if not DEBUG and first and "start_time" in job:
         return by_time()
-    elif "loop" in job:
-        data = job["loop"]
-        return _next_loop(data)
-    elif "time" in job:
+    elif "interval" in job:
+        data = job["interval"]
+        return _add_interval(data)
+    elif "start_time" in job:
         return by_time()
 
 def random_sleep(seconds, noise=0.1):
@@ -152,6 +152,8 @@ if __name__ == "__main__":
     runtime = {}
     for job in jobs:
         runtime[next_timestamp(job, first=True)] = job
+    for job in sorted(runtime.keys()):
+        print(f"Will run job {runtime[job]['name']} at {datetime.fromtimestamp(job)}")
     while True:
         next = min(runtime.keys())
         job = runtime[next]
