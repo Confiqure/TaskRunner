@@ -1,2 +1,37 @@
-# TaskRunner
+# 🔃 TaskRunner
+
+[![GNU GPL License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/Confiqure/TaskRunner/blob/master/LICENSE)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/Confiqure)](https://github.com/Confiqure)
+
 Task scheduler to queue and run various tasks through selenium. Runs on spare laptop during the day.
+
+## TODO
+
+* None!
+
+## ⚙️ Install
+
+First, install the latest version of Python 3.x.
+
+Next, install required dependencies.
+
+```shell
+pip install -r requirements.txt
+```
+
+Finally, save a chromedriver executable to your PATH. You may download the latest version here: <https://chromedriver.chromium.org/downloads>
+
+## 🐦 Usage
+
+```shell
+python runner.py
+```
+
+## 🤝 Contributing
+
+Contributions, issues and, feature requests are welcome! Feel free to check the [issues page](https://github.com/Confiqure/TaskRunner/issues).
+
+## 📝 License
+
+Copyright © 2022 Dylan Wheeler.
+This project is [GNU GPU](https://github.com/Confiqure/TaskRunner/blob/master/LICENSE) licensed.
