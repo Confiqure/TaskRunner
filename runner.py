@@ -22,17 +22,32 @@ with open("jobs.json", "r") as data:
 def selenium(data):
     if not DEBUG:
         random_sleep(20, 0.5)  # Avoid hitting the exact second
+    alert_mode = str(data.get("alert_mode", "always"))
+    last_values = list(data.get("last_values", []))
+    new_values = list()
+    result = str(data["return"])
+
     driver.get(data["url"])
-    search = driver.find_elements(by=By.XPATH, value=data["xpath"])
-    if not search:
-        return False
-    alert_mode = data.get("alert_mode", "always")
-    last_value = data.get("last_value", None)
-    value = search[0].text
-    if alert_mode == "different" and value == last_value:
-        return False
-    data["last_value"] = value
-    return re.sub(r"(\$\w+)", value, data["return"])
+    wait_for_element(data["xpath"][0])
+    random_sleep(1)
+
+    for xpath in data["xpath"]:
+        search = driver.find_elements(by=By.XPATH, value=xpath)
+        if not search:
+            result = re.sub(r"(\$\w+)", "NaN", result)
+            continue
+        value = search[0].text.replace("\n", " ").strip()
+        new_values.append(value)
+        result = re.sub(r"(\$\w+)", value, result, 1)
+
+    data['last_values'] = new_values
+    if DEBUG:
+        print(new_values)
+    if alert_mode == "always" or not last_values:
+        return result
+    for i in range(len(last_values)):
+        if new_values[i] != last_values[i]:
+            return result
 
 
 def wait_for_element(xpath, timeout=10):
@@ -101,7 +116,7 @@ def next_timestamp(job, first=False):
         if "timestamp" in data:
             return float(data["timestamp"])
         return _next_time(data)
-    if first and "time" in job:
+    if not DEBUG and first and "time" in job:
         return by_time()
     elif "loop" in job:
         data = job["loop"]
