@@ -23,7 +23,7 @@ def selenium(data):
     if not DEBUG:
         random_sleep(20, 0.5)  # Avoid hitting the exact second
     driver.get(data["url"])
-    search = driver.find_elements_by_xpath(data["xpath"])
+    search = driver.find_elements(by=By.XPATH, value=data["xpath"])
     if not search:
         return False
     mode = data.get("mode", "always")
@@ -41,7 +41,7 @@ def wait_for_element(xpath, timeout=10):
         WebDriverWait(driver, timeout, poll_frequency=0.2).until(
             expected_conditions.presence_of_element_located((By.XPATH, xpath))
         )
-        return driver.find_element_by_xpath(xpath)
+        return driver.find_elements(by=By.XPATH, value=xpath)
     except TimeoutException:
         return None
 
