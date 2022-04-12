@@ -21,33 +21,36 @@ with open("jobs.json", "r") as data:
 
 def selenium(data):
     if not DEBUG:
-        random_sleep(20, 0.5)  # Avoid hitting the exact second
-    alert_mode = str(data.get("alert_mode", "always"))
-    last_values = list(data.get("last_values", []))
-    new_values = list()
+        random_sleep(10, 0.5)  # Avoid hitting the exact second
     result = str(data["return"])
+    new_values = list()
 
     driver.get(data["url"])
-    wait_for_element(data["xpath"][0])
+    wait_for_element(data["vars"][0]["xpath"])
     random_sleep(1)
 
-    for xpath in data["xpath"]:
-        search = driver.find_elements(by=By.XPATH, value=xpath)
+    alert = True
+    for var in data["vars"]:
+        search = driver.find_elements(by=By.XPATH, value=var["xpath"])
         if not search:
             result = re.sub(r"(\$\w+)", "NaN", result)
             continue
         value = search[0].text.replace("\n", " ").strip()
         new_values.append(value)
         result = re.sub(r"(\$\w+)", value, result, 1)
+        test = var.get("alert")
+        if test is None:
+            continue
+        elif test['type'] == "equal" and test['value'] != value:
+            alert = False
+        elif test['type'] == "different":
+            alert = test['value'] != value
+            test['value'] = value
 
-    data['last_values'] = new_values
     if DEBUG:
-        print(new_values)
-    if alert_mode == "always" or not last_values:
+        print(alert, new_values)
+    if alert:
         return result
-    for i in range(len(last_values)):
-        if new_values[i] != last_values[i]:
-            return result
 
 
 def wait_for_element(xpath, timeout=10):
