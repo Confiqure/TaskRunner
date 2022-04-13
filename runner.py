@@ -1,5 +1,3 @@
-import json
-import re
 from datetime import datetime, timedelta
 from random import random
 from selenium import webdriver
@@ -8,6 +6,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 from time import sleep
+
+import json
+import re
+import winsound
 
 DEBUG = True
 
@@ -95,8 +97,9 @@ def _next_time(data):
         print("Error: no valid schedule set. Defaulting to tomorrow.")
         return (target + timedelta(days=1)).timestamp()
 
-def _add_interval(data):
+def interval_secs(job):
     offset = 0
+    data = job["interval"]
     if "seconds" in data:
         offset += data["seconds"]
     if "minutes" in data:
@@ -111,7 +114,7 @@ def _add_interval(data):
         offset += 60 * 60 * 24 * (365.25 / 12) * data["months"]
     if "years" in data:
         offset += 60 * 60 * 24 * 365.25 * data["years"]
-    return datetime.now().timestamp() + offset
+    return offset
 
 def next_timestamp(job, first=False):
     def by_time():
@@ -122,8 +125,7 @@ def next_timestamp(job, first=False):
     if not DEBUG and first and "start_time" in job:
         return by_time()
     elif "interval" in job:
-        data = job["interval"]
-        return _add_interval(data)
+        return datetime.now().timestamp() + interval_secs(job)
     elif "start_time" in job:
         return by_time()
 
@@ -152,16 +154,14 @@ if __name__ == "__main__":
     runtime = {}
     for job in jobs:
         runtime[next_timestamp(job, first=True)] = job
-    for job in sorted(runtime.keys()):
-        print(f"Will run job {runtime[job]['name']} at {datetime.fromtimestamp(job)}")
+    for time in sorted(runtime.keys()):
+        job = runtime[time]
+        print(f"Will run job {job['name']} at {datetime.fromtimestamp(time)} and every {round(interval_secs(job) / 60, 1)}m")
     while True:
         next = min(runtime.keys())
         job = runtime[next]
-        remainder = round(next - datetime.now().timestamp(), 1)
-        if DEBUG:
-            print(
-                f"Next in the queue: {job['name']} at {datetime.fromtimestamp(next)} ({remainder} seconds)"
-            )
+        mins = round((next - datetime.now().timestamp()) / 60, 1)
+        print(f"Next in the queue: {job['name']} starting in {mins}m")
 
         wait_for_timestamp(next)
 
@@ -171,5 +171,6 @@ if __name__ == "__main__":
             result = selenium(job["data"])
             if result:
                 print(result + " - " + job["name"])
+                winsound.Beep(500, 1000)
 
         runtime[next_timestamp(job)] = runtime.pop(next)

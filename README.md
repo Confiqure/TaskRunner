@@ -7,7 +7,8 @@ Task scheduler to queue and run various tasks through selenium. Runs on spare la
 
 ## TODO
 
-* None!
+* Record logs (similar to 99PartyPlanner)
+* Send push to phone
 
 ## ⚙️ Install
 
