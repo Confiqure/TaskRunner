@@ -12,9 +12,10 @@ import re
 import winsound
 
 DEBUG = True
+JOBS = "jobs.json"
 
 driver = webdriver.Chrome()
-with open("jobs.json", "r") as data:
+with open(JOBS, "r") as data:
     jobs = json.load(data)
 
 
@@ -142,7 +143,7 @@ def wait_for_timestamp(goal):
         delta = goal - datetime.now().timestamp()
         half = int(delta / 2)
         if DEBUG:
-            print(f"Seconds left: {round(delta, 1)}")
+            print(f"{round(delta, 1)}s")
         if half > 1:
             sleep(half)
         elif delta > 0:
@@ -158,21 +159,23 @@ if __name__ == "__main__":
         runtime[next_timestamp(job, first=True)] = job
     for time in sorted(runtime.keys()):
         job = runtime[time]
-        print(f"Will run job {job['name']} at {datetime.fromtimestamp(time)} and every {round(interval_secs(job) / 60, 1)}m")
+        print(f"{job['name']} at {datetime.fromtimestamp(time)} and every {round(interval_secs(job) / 60, 1)}m")
     while True:
         next = min(runtime.keys())
         job = runtime[next]
         mins = round((next - datetime.now().timestamp()) / 60, 1)
+
         print(f"Next in the queue: {job['name']} starting in {mins}m")
-
         wait_for_timestamp(next)
-
         if DEBUG:
             print(f"Triggered job: {job['name']} at {datetime.now()}")
+
         if job["type"] == "selenium":
             result = selenium(job["data"])
-            if result:
-                print(result + " - " + job["name"])
-                winsound.Beep(500, 1000)
+        if result:
+            print(result + " - " + job["name"])
+            winsound.Beep(500, 1000)
 
+        with open(JOBS, "w") as save:
+            json.dump(jobs, save)
         runtime[next_timestamp(job)] = runtime.pop(next)
