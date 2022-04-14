@@ -45,6 +45,8 @@ def selenium(data):
             alert = True
         elif test['type'] == "equal" and test['value'] == value:
             alert = True
+        elif test['type'] == "contains" and test['value'] in value:
+            alert = True
         elif test['type'] == "different" and test['value'] != value:
             alert = True
             test['value'] = value
