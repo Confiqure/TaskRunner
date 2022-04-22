@@ -48,19 +48,23 @@ def selenium(data):
             alert = True
         elif test["type"] == "contains" and test["value"] in value:
             alert = True
-        elif test["type"].startswith("different") and test["value"] != value:
+        elif test["type"] == "different" and test["value"] != value:
             alert = True
-            if test["type"] == "different_num":
-                value = float("".join(re.findall(r"[\d\.]+", value)))
-                diff = value - float(test["value"])
-                if diff > 0:
-                    diff = "+" + str(diff)
-                else:
-                    diff = str(diff)
-                if diff.endswith(".0"):
-                    diff = diff[:-2]
-                result = result.replace("$diff", diff)
             test["value"] = value
+        elif test["type"] == "different_num":
+            value = float("".join(re.findall(r"[\d\.]+", value)))
+            diff = value - float(test["value"])
+            if diff == 0:
+                continue
+            elif diff > 0:
+                diff = "+" + str(diff)
+            else:
+                diff = str(diff)
+            if diff.endswith(".0"):
+                diff = diff[:-2]
+            result = result.replace("$diff", diff)
+            alert = True
+            test["value"] = str(value)
 
     if DEBUG:
         print(alert, new_values)
