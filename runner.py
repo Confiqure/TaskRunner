@@ -44,13 +44,23 @@ def selenium(data):
         test = var.get("alert")
         if test is None:
             alert = True
-        elif test['type'] == "equal" and test['value'] == value:
+        elif test["type"] == "equal" and test["value"] == value:
             alert = True
-        elif test['type'] == "contains" and test['value'] in value:
+        elif test["type"] == "contains" and test["value"] in value:
             alert = True
-        elif test['type'] == "different" and test['value'] != value:
+        elif test["type"].startswith("different") and test["value"] != value:
             alert = True
-            test['value'] = value
+            if test["type"] == "different_num":
+                value = float("".join(re.findall(r"[\d\.]+", value)))
+                diff = value - float(test["value"])
+                if diff > 0:
+                    diff = "+" + str(diff)
+                else:
+                    diff = str(diff)
+                if diff.endswith(".0"):
+                    diff = diff[:-2]
+                result = result.replace("$diff", diff)
+            test["value"] = value
 
     if DEBUG:
         print(alert, new_values)
@@ -70,6 +80,7 @@ def wait_for_element(xpath, timeout=10):
 
 
 # SCHEDULER
+
 
 def _next_time(data):
     target = datetime.now()
@@ -100,6 +111,7 @@ def _next_time(data):
         print("Error: no valid schedule set. Defaulting to tomorrow.")
         return (target + timedelta(days=1)).timestamp()
 
+
 def interval_secs(job):
     offset = 0
     data = job["interval"]
@@ -119,18 +131,21 @@ def interval_secs(job):
         offset += 60 * 60 * 24 * 365.25 * data["years"]
     return offset
 
+
 def next_timestamp(job, first=False):
     def by_time():
         data = job["start_time"]
         if "timestamp" in data:
             return float(data["timestamp"])
         return _next_time(data)
+
     if not DEBUG and first and "start_time" in job:
         return by_time()
     elif "interval" in job:
         return datetime.now().timestamp() + interval_secs(job)
     elif "start_time" in job:
         return by_time()
+
 
 def random_sleep(seconds, noise=0.1):
     sleep((random() * 2 * noise * seconds) + (seconds * (1 - noise)))
@@ -159,7 +174,9 @@ if __name__ == "__main__":
         runtime[next_timestamp(job, first=True)] = job
     for time in sorted(runtime.keys()):
         job = runtime[time]
-        print(f"{job['name']} at {datetime.fromtimestamp(time)} and every {round(interval_secs(job) / 60, 1)}m")
+        print(
+            f"{job['name']} at {datetime.fromtimestamp(time)} and every {round(interval_secs(job) / 60, 1)}m"
+        )
     while True:
         next = min(runtime.keys())
         job = runtime[next]
