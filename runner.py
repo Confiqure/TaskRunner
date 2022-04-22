@@ -44,14 +44,14 @@ def selenium(data):
         test = var.get("alert")
         if test is None:
             alert = True
-        elif test["type"] == "equal" and test["value"] == value:
-            alert = True
         elif test["type"] == "contains" and test["value"] in value:
             alert = True
-        elif test["type"] == "different" and test["value"] != value:
+        elif test["type"] == "eq" and test["value"] == value:
+            alert = True
+        elif test["type"] == "neq" and test["value"] != value:
             alert = True
             test["value"] = value
-        elif test["type"] == "different_num":
+        elif test["type"] == "neq_num":
             value = float("".join(re.findall(r"[\d\.]+", value)))
             diff = value - float(test["value"])
             if diff == 0:
@@ -65,6 +65,18 @@ def selenium(data):
             result = result.replace("$diff", diff)
             alert = True
             test["value"] = str(value)
+        elif test["type"] in ("gte", "gt", "lte", "lt"):
+            value = float("".join(re.findall(r"[\d\.]+", value)))
+            if test["type"] == "gte" and value >= test["value"]:
+                alert = True
+            elif test["type"] == "gt" and value > test["value"]:
+                alert = True
+            elif test["type"] == "lte" and value <= test["value"]:
+                alert = True
+            elif test["type"] == "lt" and value < test["value"]:
+                alert = True
+            if alert:
+                test["value"] = value
 
     if DEBUG:
         print(alert, new_values)

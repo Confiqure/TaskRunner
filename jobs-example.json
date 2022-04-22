@@ -16,14 +16,14 @@
         {
           "xpath": "//xpath",
           "alert": {
-            "type": "different",
+            "type": "neq",
             "value": "previous value"
           }
         },
         {
           "xpath": "//xpath",
           "alert": {
-            "type": "equal",
+            "type": "eq",
             "value": "condition to return true"
           }
         }
